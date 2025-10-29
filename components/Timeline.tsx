@@ -1,25 +1,24 @@
 
 import React from 'react';
-import { Photo, Layout } from '../types';
-import PhotoCard from './PhotoCard';
-import PhotoListItem from './PhotoListItem';
+import { MediaItem, Layout } from '../types';
+import MediaCard from './PhotoCard';
+import MediaListItem from './PhotoListItem';
 
 interface TimelineProps {
-  photos: Photo[];
-  onPhotoClick: (photo: Photo) => void;
-  onDeletePhoto: (photo: Photo) => void;
+  mediaItems: MediaItem[];
+  onMediaClick: (media: MediaItem) => void;
+  onDeleteMedia: (media: MediaItem) => void;
   layout: Layout;
   // Selection mode props
   isSelectionMode: boolean;
-  selectedPhotoIds: Set<string>;
-  onEnterSelectionMode: (photo: Photo) => void;
-  onToggleSelection: (photoId: string) => void;
+  selectedMediaIds: Set<string>;
+  onEnterSelectionMode: (media: MediaItem) => void;
+  onToggleSelection: (mediaId: string) => void;
 }
 
-const DatedGridTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ photos, ...rest }) => {
-    const groupedPhotos = photos.reduce((acc, photo) => {
-        // FIX: Corrected typo from `toLocaleDateDateString` to `toLocaleDateString`.
-        const date = new Date(photo.date).toLocaleDateString(undefined, {
+const DatedGridTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ mediaItems, ...rest }) => {
+    const groupedMedia = mediaItems.reduce((acc, media) => {
+        const date = new Date(media.date).toLocaleDateString(undefined, {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
@@ -27,23 +26,23 @@ const DatedGridTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ photos, ..
         if (!acc[date]) {
             acc[date] = [];
         }
-        acc[date].push(photo);
+        acc[date].push(media);
         return acc;
-    }, {} as Record<string, Photo[]>);
+    }, {} as Record<string, MediaItem[]>);
 
     return (
         <div className="space-y-12">
-            {Object.keys(groupedPhotos).map((date) => (
+            {Object.keys(groupedMedia).map((date) => (
                 <div key={date}>
                     <h2 className="text-xl font-semibold text-gray-500 dark:text-text-secondary mb-6 pl-2 border-l-4 border-accent">{date}</h2>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                        {groupedPhotos[date].map((photo) => (
-                            <PhotoCard
-                                key={photo.id}
-                                photo={photo}
-                                onClick={() => rest.onPhotoClick(photo)}
-                                onDelete={rest.onDeletePhoto}
-                                isSelected={rest.selectedPhotoIds.has(photo.id)}
+                        {groupedMedia[date].map((media) => (
+                            <MediaCard
+                                key={media.id}
+                                media={media}
+                                onClick={() => rest.onMediaClick(media)}
+                                onDelete={rest.onDeleteMedia}
+                                isSelected={rest.selectedMediaIds.has(media.id)}
                                 isSelectionMode={rest.isSelectionMode}
                                 onEnterSelectionMode={rest.onEnterSelectionMode}
                                 onToggleSelection={rest.onToggleSelection}
@@ -56,16 +55,16 @@ const DatedGridTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ photos, ..
     );
 };
 
-const CompactGridTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ photos, ...rest }) => {
+const CompactGridTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ mediaItems, ...rest }) => {
     return (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {photos.map((photo) => (
-                <PhotoCard
-                    key={photo.id}
-                    photo={photo}
-                    onClick={() => rest.onPhotoClick(photo)}
-                    onDelete={rest.onDeletePhoto}
-                    isSelected={rest.selectedPhotoIds.has(photo.id)}
+            {mediaItems.map((media) => (
+                <MediaCard
+                    key={media.id}
+                    media={media}
+                    onClick={() => rest.onMediaClick(media)}
+                    onDelete={rest.onDeleteMedia}
+                    isSelected={rest.selectedMediaIds.has(media.id)}
                     isSelectionMode={rest.isSelectionMode}
                     onEnterSelectionMode={rest.onEnterSelectionMode}
                     onToggleSelection={rest.onToggleSelection}
@@ -75,16 +74,16 @@ const CompactGridTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ photos, 
     );
 };
 
-const ListTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ photos, ...rest }) => {
+const ListTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ mediaItems, ...rest }) => {
     return (
         <div className="max-w-2xl mx-auto space-y-4">
-            {photos.map((photo) => (
-                <PhotoListItem
-                    key={photo.id}
-                    photo={photo}
-                    onClick={() => rest.onPhotoClick(photo)}
-                    onDelete={rest.onDeletePhoto}
-                    isSelected={rest.selectedPhotoIds.has(photo.id)}
+            {mediaItems.map((media) => (
+                <MediaListItem
+                    key={media.id}
+                    media={media}
+                    onClick={() => rest.onMediaClick(media)}
+                    onDelete={rest.onDeleteMedia}
+                    isSelected={rest.selectedMediaIds.has(media.id)}
                     isSelectionMode={rest.isSelectionMode}
                     onEnterSelectionMode={rest.onEnterSelectionMode}
                     onToggleSelection={rest.onToggleSelection}

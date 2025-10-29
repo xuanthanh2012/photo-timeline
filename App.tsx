@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { Photo, Filters } from './types';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { MediaItem, MediaItemMetadata, Filters } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useTheme } from './hooks/useTheme';
 import { useLayout } from './hooks/useLayout';
@@ -7,211 +7,199 @@ import Header from './components/Header';
 import Timeline from './components/Timeline';
 import Fab from './components/Fab';
 import UploadModal from './components/UploadModal';
-import ViewPhotoModal from './components/ViewPhotoModal';
+import ViewMediaModal from './components/ViewPhotoModal';
 import ConfirmDeleteModal from './components/ConfirmDeleteModal';
 import { PlusIcon } from './components/icons/PlusIcon';
 import SearchAndFilter from './components/SearchAndFilter';
+import * as db from './db';
 
 const App: React.FC = () => {
-  useTheme(); // Initialize theme management
+  useTheme();
   const { layout, cycleLayout } = useLayout();
-  const [photos, setPhotos] = useLocalStorage<Photo[]>('photos', []);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   
-  // State for single and multiple photo deletion
-  const [photosToDelete, setPhotosToDelete] = useState<Photo[]>([]);
+  const [mediaMetadata, setMediaMetadata] = useLocalStorage<MediaItemMetadata[]>('mediaItemsMetadata', []);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // State for multiple selection mode
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [selectedMediaItem, setSelectedMediaItem] = useState<MediaItem | null>(null);
+  const [mediaItemsToDelete, setMediaItemsToDelete] = useState<MediaItem[]>([]);
+  
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<string>>(new Set());
+  const [selectedMediaItemIds, setSelectedMediaItemIds] = useState<Set<string>>(new Set());
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState<Filters>({
-    dateRange: { start: '', end: '' },
-  });
+  const [filters, setFilters] = useState<Filters>({ dateRange: { start: '', end: '' } });
 
-  const sortedPhotos = useMemo(() => {
-    const validPhotos = Array.isArray(photos) ? photos.filter(p => p && p.id && p.date && p.dataUrl) : [];
-    return [...validPhotos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [photos]);
+  useEffect(() => {
+    let active = true;
+    const loadMediaFiles = async () => {
+      setIsLoading(true);
+      const itemsWithURLs: MediaItem[] = await Promise.all(
+        mediaMetadata.map(async (meta) => {
+          const file = await db.getMediaFile(meta.id);
+          const objectURL = file ? URL.createObjectURL(file) : '';
+          return { ...meta, objectURL };
+        })
+      );
 
-  const filteredPhotos = useMemo(() => {
-    return sortedPhotos.filter(photo => {
+      if (active) {
+        setMediaItems(currentItems => {
+          // Revoke old URLs before setting new state to prevent memory leaks
+          currentItems.forEach(item => URL.revokeObjectURL(item.objectURL));
+          return itemsWithURLs.filter(item => item.objectURL); // Filter out items where file was not found
+        });
+        setIsLoading(false);
+      }
+    };
+
+    loadMediaFiles();
+
+    return () => {
+      active = false;
+    };
+  }, [mediaMetadata]);
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+        mediaItems.forEach(item => URL.revokeObjectURL(item.objectURL));
+    };
+  }, [mediaItems]);
+
+  const sortedMediaItems = useMemo(() => {
+    return [...mediaItems].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [mediaItems]);
+
+  const filteredMediaItems = useMemo(() => {
+    return sortedMediaItems.filter(media => {
       const searchLower = searchQuery.toLowerCase();
-      
-      const captionMatch = photo.caption ? photo.caption.toLowerCase().includes(searchLower) : false;
-      
+      const captionMatch = media.caption.toLowerCase().includes(searchLower);
       if (searchQuery && !captionMatch) return false;
-      
-      const photoDate = new Date(photo.date);
+      const mediaDate = new Date(media.date);
       if (filters.dateRange.start) {
-        const startDate = new Date(filters.dateRange.start);
-        if (photoDate < startDate) return false;
+        if (mediaDate < new Date(filters.dateRange.start)) return false;
       }
       if (filters.dateRange.end) {
         const endDate = new Date(filters.dateRange.end);
-        endDate.setHours(23, 59, 59, 999); // Set to end of day
-        if (photoDate > endDate) return false;
+        endDate.setHours(23, 59, 59, 999);
+        if (mediaDate > endDate) return false;
       }
-      
       return true;
     });
-  }, [sortedPhotos, searchQuery, filters]);
+  }, [sortedMediaItems, searchQuery, filters]);
 
-  const handleAddPhoto = useCallback((newPhoto: Omit<Photo, 'id'>) => {
-    setPhotos(prevPhotos => [
-      { ...newPhoto, id: `photo-${Date.now()}` },
-      ...prevPhotos
-    ]);
+  const handleAddMedia = useCallback(async ({ file, caption }: { file: File, caption: string }) => {
+    const newId = crypto.randomUUID();
+    const newMediaMeta: MediaItemMetadata = {
+      id: newId,
+      date: new Date().toISOString(),
+      caption,
+      type: file.type.startsWith('image/') ? 'image' : 'video',
+    };
+
+    await db.addMediaFile(newId, file);
+    setMediaMetadata(prev => [...prev, newMediaMeta]);
     setIsUploadModalOpen(false);
-  }, [setPhotos]);
+  }, [setMediaMetadata]);
 
-  const handleSelectPhoto = useCallback((photo: Photo) => {
-    setSelectedPhoto(photo);
-  }, []);
+  const handleSelectMedia = useCallback((mediaItem: MediaItem) => setSelectedMediaItem(mediaItem), []);
   
-  const handleDeleteRequest = useCallback((photo: Photo) => {
-    setPhotosToDelete([photo]);
-  }, []);
+  const handleDeleteRequest = useCallback((mediaItem: MediaItem) => setMediaItemsToDelete([mediaItem]), []);
 
-  const handleConfirmDelete = useCallback(() => {
-    if (photosToDelete.length === 0) return;
-    const idsToDelete = new Set(photosToDelete.map(p => p.id));
-    setPhotos(prevPhotos => prevPhotos.filter(p => !idsToDelete.has(p.id)));
+  const handleConfirmDelete = useCallback(async () => {
+    if (mediaItemsToDelete.length === 0) return;
     
-    if (selectedPhoto && idsToDelete.has(selectedPhoto.id)) {
-      setSelectedPhoto(null);
+    const idsToDelete = new Set(mediaItemsToDelete.map(item => item.id));
+
+    for (const id of idsToDelete) {
+      await db.deleteMediaFile(id);
     }
-    setPhotosToDelete([]);
+    
+    setMediaMetadata(prev => prev.filter(meta => !idsToDelete.has(meta.id)));
+    
+    if (selectedMediaItem && idsToDelete.has(selectedMediaItem.id)) {
+      setSelectedMediaItem(null);
+    }
+    setMediaItemsToDelete([]);
     setIsSelectionMode(false);
-    setSelectedPhotoIds(new Set());
-  }, [setPhotos, photosToDelete, selectedPhoto]);
+    setSelectedMediaItemIds(new Set());
+  }, [mediaItemsToDelete, setMediaMetadata, selectedMediaItem]);
 
-  const handleCancelDelete = useCallback(() => {
-    setPhotosToDelete([]);
-  }, []);
+  const handleCancelDelete = useCallback(() => setMediaItemsToDelete([]), []);
 
-  const handleNextPhoto = useCallback(() => {
-    if (!selectedPhoto) return;
-    const currentIndex = filteredPhotos.findIndex(p => p.id === selectedPhoto.id);
-    if (currentIndex > -1 && currentIndex < filteredPhotos.length - 1) {
-      setSelectedPhoto(filteredPhotos[currentIndex + 1]);
-    }
-  }, [selectedPhoto, filteredPhotos]);
+  const handleNextMedia = useCallback(() => {
+    if (!selectedMediaItem) return;
+    const currentIndex = filteredMediaItems.findIndex(p => p.id === selectedMediaItem.id);
+    if (currentIndex < filteredMediaItems.length - 1) setSelectedMediaItem(filteredMediaItems[currentIndex + 1]);
+  }, [selectedMediaItem, filteredMediaItems]);
 
-  const handlePrevPhoto = useCallback(() => {
-    if (!selectedPhoto) return;
-    const currentIndex = filteredPhotos.findIndex(p => p.id === selectedPhoto.id);
-    if (currentIndex > 0) {
-      setSelectedPhoto(filteredPhotos[currentIndex - 1]);
-    }
-  }, [selectedPhoto, filteredPhotos]);
+  const handlePrevMedia = useCallback(() => {
+    if (!selectedMediaItem) return;
+    const currentIndex = filteredMediaItems.findIndex(p => p.id === selectedMediaItem.id);
+    if (currentIndex > 0) setSelectedMediaItem(filteredMediaItems[currentIndex - 1]);
+  }, [selectedMediaItem, filteredMediaItems]);
 
-  // --- Multiple Selection Handlers ---
-  const handleEnterSelectionMode = useCallback((photo: Photo) => {
+  const handleEnterSelectionMode = useCallback((mediaItem: MediaItem) => {
     setIsSelectionMode(true);
-    setSelectedPhotoIds(new Set([photo.id]));
+    setSelectedMediaItemIds(new Set([mediaItem.id]));
   }, []);
 
-  const handleToggleSelection = useCallback((photoId: string) => {
-    setSelectedPhotoIds(prevIds => {
+  const handleToggleSelection = useCallback((mediaItemId: string) => {
+    setSelectedMediaItemIds(prevIds => {
       const newIds = new Set(prevIds);
-      if (newIds.has(photoId)) {
-        newIds.delete(photoId);
-      } else {
-        newIds.add(photoId);
-      }
-      // If last item is deselected, exit selection mode
-      if (newIds.size === 0) {
-        setIsSelectionMode(false);
-      }
+      if (newIds.has(mediaItemId)) newIds.delete(mediaItemId);
+      else newIds.add(mediaItemId);
+      if (newIds.size === 0) setIsSelectionMode(false);
       return newIds;
     });
   }, []);
 
   const handleCancelSelection = useCallback(() => {
     setIsSelectionMode(false);
-    setSelectedPhotoIds(new Set());
+    setSelectedMediaItemIds(new Set());
   }, []);
 
   const handleDeleteSelectedRequest = useCallback(() => {
-    const photosToDelete = photos.filter(p => selectedPhotoIds.has(p.id));
-    setPhotosToDelete(photosToDelete);
-  }, [photos, selectedPhotoIds]);
+    setMediaItemsToDelete(mediaItems.filter(p => selectedMediaItemIds.has(p.id)));
+  }, [mediaItems, selectedMediaItemIds]);
 
   return (
     <div className="min-h-screen">
       <Header 
-        onCycleLayout={cycleLayout} 
-        currentLayout={layout}
-        isSelectionMode={isSelectionMode}
-        selectedCount={selectedPhotoIds.size}
-        onCancelSelection={handleCancelSelection}
+        onCycleLayout={cycleLayout} currentLayout={layout} isSelectionMode={isSelectionMode}
+        selectedCount={selectedMediaItemIds.size} onCancelSelection={handleCancelSelection}
         onDeleteSelected={handleDeleteSelectedRequest}
       />
       <main className="container mx-auto px-4 py-8">
         <SearchAndFilter
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          filters={filters}
-          onFilterChange={setFilters}
-          allPhotos={sortedPhotos}
+          searchQuery={searchQuery} onSearchChange={setSearchQuery} filters={filters}
+          onFilterChange={setFilters} allMedia={sortedMediaItems}
         />
-        {filteredPhotos.length > 0 ? (
+        {isLoading ? (
+            <div className="text-center py-20 text-gray-600 dark:text-text-secondary">Loading your media...</div>
+        ) : filteredMediaItems.length > 0 ? (
           <Timeline 
-            photos={filteredPhotos} 
-            onPhotoClick={handleSelectPhoto} 
-            onDeletePhoto={handleDeleteRequest}
-            layout={layout}
-            isSelectionMode={isSelectionMode}
-            onEnterSelectionMode={handleEnterSelectionMode}
-            onToggleSelection={handleToggleSelection}
-            selectedPhotoIds={selectedPhotoIds}
+            mediaItems={filteredMediaItems} onMediaClick={handleSelectMedia} onDeleteMedia={handleDeleteRequest}
+            layout={layout} isSelectionMode={isSelectionMode} onEnterSelectionMode={handleEnterSelectionMode}
+            onToggleSelection={handleToggleSelection} selectedMediaIds={selectedMediaItemIds}
           />
         ) : (
           <div className="text-center py-20">
             <h2 className="text-2xl font-bold text-gray-800 dark:text-text-main mb-2">
-              {photos.length > 0 ? 'No photos match your filters' : 'Your timeline is empty'}
+              {mediaMetadata.length > 0 ? 'No media match your filters' : 'Your timeline is empty'}
             </h2>
             <p className="text-gray-600 dark:text-text-secondary">
-              {photos.length > 0 ? 'Try adjusting your search or filters.' : "Click the '+' button to add your first photo."}
+              {mediaMetadata.length > 0 ? 'Try adjusting your search or filters.' : "Click the '+' button to add your first photo or video."}
             </p>
           </div>
         )}
       </main>
 
-      {!isSelectionMode && (
-          <Fab onClick={() => setIsUploadModalOpen(true)}>
-            <PlusIcon />
-          </Fab>
-      )}
-
-      {isUploadModalOpen && (
-        <UploadModal
-          onClose={() => setIsUploadModalOpen(false)}
-          onUpload={handleAddPhoto}
-        />
-      )}
-
-      {selectedPhoto && (
-        <ViewPhotoModal
-          photo={selectedPhoto}
-          photos={filteredPhotos}
-          onClose={() => setSelectedPhoto(null)}
-          onDelete={handleDeleteRequest}
-          onNext={handleNextPhoto}
-          onPrev={handlePrevPhoto}
-        />
-      )}
-
-      {photosToDelete.length > 0 && (
-        <ConfirmDeleteModal
-          count={photosToDelete.length}
-          onConfirm={handleConfirmDelete}
-          onCancel={handleCancelDelete}
-        />
-      )}
+      {!isSelectionMode && <Fab onClick={() => setIsUploadModalOpen(true)}><PlusIcon /></Fab>}
+      {isUploadModalOpen && <UploadModal onClose={() => setIsUploadModalOpen(false)} onUpload={handleAddMedia} />}
+      {selectedMediaItem && <ViewMediaModal media={selectedMediaItem} allMedia={filteredMediaItems} onClose={() => setSelectedMediaItem(null)} onDelete={handleDeleteRequest} onNext={handleNextMedia} onPrev={handlePrevMedia} />}
+      {mediaItemsToDelete.length > 0 && <ConfirmDeleteModal count={mediaItemsToDelete.length} onConfirm={handleConfirmDelete} onCancel={handleCancelDelete} />}
     </div>
   );
 };

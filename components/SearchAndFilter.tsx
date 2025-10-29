@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Filters, Photo } from '../types';
+import { Filters, MediaItem } from '../types';
 import FilterPanel from './FilterPanel';
 import { FilterIcon } from './icons/FilterIcon';
 import { XIcon } from './icons/XIcon';
@@ -9,7 +9,7 @@ interface SearchAndFilterProps {
   onSearchChange: (query: string) => void;
   filters: Filters;
   onFilterChange: (filters: Filters) => void;
-  allPhotos: Photo[];
+  allMedia: MediaItem[];
 }
 
 const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
@@ -17,7 +17,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   onSearchChange,
   filters,
   onFilterChange,
-  allPhotos,
+  allMedia,
 }) => {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
@@ -72,7 +72,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
         <FilterPanel
           filters={filters}
           onFilterChange={onFilterChange}
-          allPhotos={allPhotos}
+          allMedia={allMedia}
           onClose={() => setIsPanelOpen(false)}
         />
       )}

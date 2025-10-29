@@ -1,11 +1,11 @@
 import React from 'react';
-import { Filters, Photo } from '../types';
+import { Filters, MediaItem } from '../types';
 import { XIcon } from './icons/XIcon';
 
 interface FilterPanelProps {
   filters: Filters;
   onFilterChange: (filters: Filters) => void;
-  allPhotos: Photo[];
+  allMedia: MediaItem[];
   onClose: () => void;
 }
 

@@ -1,21 +1,21 @@
-
 import React, { useRef } from 'react';
-import { Photo } from '../types';
+import { MediaItem } from '../types';
 import { TrashIcon } from './icons/TrashIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
+import { PlayIcon } from './icons/PlayIcon';
 
-interface PhotoListItemProps {
-  photo: Photo;
+interface MediaListItemProps {
+  media: MediaItem;
   onClick: () => void;
-  onDelete: (photo: Photo) => void;
+  onDelete: (media: MediaItem) => void;
   isSelectionMode: boolean;
   isSelected: boolean;
-  onEnterSelectionMode: (photo: Photo) => void;
-  onToggleSelection: (photoId: string) => void;
+  onEnterSelectionMode: (media: MediaItem) => void;
+  onToggleSelection: (mediaId: string) => void;
 }
 
-const PhotoListItem: React.FC<PhotoListItemProps> = ({ 
-    photo, 
+const MediaListItem: React.FC<MediaListItemProps> = ({ 
+    media, 
     onClick, 
     onDelete,
     isSelectionMode,
@@ -27,10 +27,10 @@ const PhotoListItem: React.FC<PhotoListItemProps> = ({
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onDelete(photo);
+    onDelete(media);
   };
 
-  const formattedDate = new Date(photo.date).toLocaleString(undefined, {
+  const formattedDate = new Date(media.date).toLocaleString(undefined, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -39,7 +39,7 @@ const PhotoListItem: React.FC<PhotoListItemProps> = ({
   });
 
   const handleMouseDown = () => {
-    pressTimer.current = window.setTimeout(() => onEnterSelectionMode(photo), 1500);
+    pressTimer.current = window.setTimeout(() => onEnterSelectionMode(media), 1500);
   };
   
   const handleMouseUp = () => {
@@ -51,7 +51,7 @@ const PhotoListItem: React.FC<PhotoListItemProps> = ({
 
   const handleClick = () => {
     if (isSelectionMode) {
-      onToggleSelection(photo.id);
+      onToggleSelection(media.id);
     } else {
       onClick();
     }
@@ -72,17 +72,33 @@ const PhotoListItem: React.FC<PhotoListItemProps> = ({
                 <CheckCircleIcon />
             </div>
         )}
-      <div className="sm:w-40 sm:h-40 w-full aspect-video sm:aspect-square flex-shrink-0">
-        <img
-          src={photo.dataUrl}
-          alt={photo.caption}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
+      <div className="sm:w-40 sm:h-40 w-full aspect-video sm:aspect-square flex-shrink-0 relative">
+        {media.type === 'image' ? (
+            <img
+            src={media.objectURL}
+            alt={media.caption}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            />
+        ) : (
+            <video
+            src={media.objectURL}
+            className="w-full h-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            />
+        )}
+         {media.type === 'video' && (
+            <div className="absolute bottom-2 right-2 bg-black/50 text-white rounded-full p-1">
+                <PlayIcon className="h-4 w-4" />
+            </div>
+         )}
       </div>
       <div className="p-4 flex-grow flex flex-col justify-between">
         <div>
-            <p className="text-gray-800 dark:text-text-main font-medium mb-1 line-clamp-2">{photo.caption || "No caption"}</p>
+            <p className="text-gray-800 dark:text-text-main font-medium mb-1 line-clamp-2">{media.caption || "No caption"}</p>
             <p className="text-xs text-gray-500 dark:text-text-secondary">{formattedDate}</p>
         </div>
         {!isSelectionMode && (
@@ -90,7 +106,7 @@ const PhotoListItem: React.FC<PhotoListItemProps> = ({
                 <button
                     onClick={handleDeleteClick}
                     className="bg-gray-100 dark:bg-primary text-gray-500 dark:text-gray-400 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-red-500 hover:text-white"
-                    aria-label="Delete photo"
+                    aria-label="Delete media"
                 >
                     <TrashIcon className="h-4 w-4" />
                 </button>
@@ -101,4 +117,4 @@ const PhotoListItem: React.FC<PhotoListItemProps> = ({
   );
 };
 
-export default PhotoListItem;
+export default MediaListItem;

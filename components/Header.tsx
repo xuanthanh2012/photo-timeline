@@ -55,7 +55,7 @@ const Header: React.FC<HeaderProps> = ({
                 <button
                     onClick={onDeleteSelected}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
-                    aria-label="Delete selected photos"
+                    aria-label="Delete selected items"
                 >
                     <TrashIcon className="h-5 w-5" />
                     <span>Delete</span>

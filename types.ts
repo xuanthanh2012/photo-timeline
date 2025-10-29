@@ -1,8 +1,14 @@
-export interface Photo {
+// Stored in localStorage, contains only serializable data
+export interface MediaItemMetadata {
   id: string;
-  date: string; // ISO 8601 string
+  date: string;
   caption: string;
-  dataUrl: string; // base64 encoded image data
+  type: 'image' | 'video';
+}
+
+// Used in the app's state, includes a runtime-generated URL for rendering
+export interface MediaItem extends MediaItemMetadata {
+  objectURL: string;
 }
 
 export interface Filters {
