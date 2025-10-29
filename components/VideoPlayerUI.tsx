@@ -6,6 +6,8 @@ import { PlayIcon } from './icons/PlayIcon';
 import { PauseIcon } from './icons/PauseIcon';
 import { SkipForwardIcon } from './icons/SkipForwardIcon';
 import { SkipBackwardIcon } from './icons/SkipBackwardIcon';
+import { FullscreenIcon } from './icons/FullscreenIcon';
+import { ExitFullscreenIcon } from './icons/ExitFullscreenIcon';
 
 interface VideoPlayerUIProps {
   media: MediaItem;
@@ -21,21 +23,26 @@ const formatTime = (time: number) => {
 };
 
 export const VideoPlayerUI: React.FC<VideoPlayerUIProps> = ({ media, onClose, onDelete }) => {
+  const playerContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const controlsTimeoutRef = useRef<number | null>(null);
+  // FIX: Initialize useRef with a value. The call was missing an argument.
+  const keyboardHandlerRef = useRef<((e: KeyboardEvent) => void) | undefined>(undefined);
+
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isControlsVisible, setIsControlsVisible] = useState(true);
-  const controlsTimeoutRef = useRef<number | null>(null);
-
-  const hideControls = () => setIsControlsVisible(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const resetControlsTimeout = useCallback(() => {
     setIsControlsVisible(true);
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
     }
-    controlsTimeoutRef.current = window.setTimeout(hideControls, 3000);
+    controlsTimeoutRef.current = window.setTimeout(() => {
+        setIsControlsVisible(false);
+    }, 3000);
   }, []);
 
   useEffect(() => {
@@ -46,6 +53,14 @@ export const VideoPlayerUI: React.FC<VideoPlayerUIProps> = ({ media, onClose, on
       }
     };
   }, [resetControlsTimeout, media]);
+  
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   const togglePlayPause = useCallback(() => {
     const video = videoRef.current;
@@ -60,6 +75,20 @@ export const VideoPlayerUI: React.FC<VideoPlayerUIProps> = ({ media, onClose, on
       resetControlsTimeout();
     }
   }, [resetControlsTimeout]);
+  
+  const toggleFullscreen = useCallback(() => {
+    const playerContainer = playerContainerRef.current;
+    if (!playerContainer) return;
+
+    if (!document.fullscreenElement) {
+        playerContainer.requestFullscreen().catch(err => {
+            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+    resetControlsTimeout();
+  }, [resetControlsTimeout]);
 
   const skip = useCallback((amount: number) => {
     const video = videoRef.current;
@@ -69,20 +98,34 @@ export const VideoPlayerUI: React.FC<VideoPlayerUIProps> = ({ media, onClose, on
     }
   }, [resetControlsTimeout]);
 
+  // Effect to update the ref with the latest handlers on each render
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    keyboardHandlerRef.current = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         e.preventDefault();
         togglePlayPause();
       } else if (e.code === 'ArrowRight') {
+        e.preventDefault();
         skip(5);
       } else if (e.code === 'ArrowLeft') {
+        e.preventDefault();
         skip(-5);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [togglePlayPause, skip]);
+  });
+
+  // Effect to attach the event listener once
+  useEffect(() => {
+    const eventListener = (e: KeyboardEvent) => {
+      if (keyboardHandlerRef.current) {
+        keyboardHandlerRef.current(e);
+      }
+    };
+    window.addEventListener('keydown', eventListener);
+    return () => {
+      window.removeEventListener('keydown', eventListener);
+    };
+  }, []);
 
   const handleTimeUpdate = () => {
     const video = videoRef.current;
@@ -112,6 +155,7 @@ export const VideoPlayerUI: React.FC<VideoPlayerUIProps> = ({ media, onClose, on
 
   return (
     <div
+      ref={playerContainerRef}
       className="relative w-full h-full flex items-center justify-center bg-black"
       onMouseMove={resetControlsTimeout}
       onClick={(e) => { e.stopPropagation(); togglePlayPause(); }}
@@ -163,9 +207,16 @@ export const VideoPlayerUI: React.FC<VideoPlayerUIProps> = ({ media, onClose, on
           <span className="text-sm">{formatTime(duration)}</span>
         </div>
         <div className="flex items-center justify-center gap-8 mt-2">
-          <button onClick={() => skip(-5)} className="p-2 rounded-full hover:bg-white/10"><SkipBackwardIcon /></button>
-          <button onClick={togglePlayPause} className="p-2 rounded-full hover:bg-white/10">{isPlaying ? <PauseIcon /> : <PlayIcon />}</button>
-          <button onClick={() => skip(5)} className="p-2 rounded-full hover:bg-white/10"><SkipForwardIcon /></button>
+          <button onClick={(e) => { e.stopPropagation(); skip(-5); }} className="p-2 rounded-full hover:bg-white/10"><SkipBackwardIcon /></button>
+          <button onClick={(e) => { e.stopPropagation(); togglePlayPause(); }} className="p-2 rounded-full hover:bg-white/10">{isPlaying ? <PauseIcon /> : <PlayIcon />}</button>
+          <button onClick={(e) => { e.stopPropagation(); skip(5); }} className="p-2 rounded-full hover:bg-white/10"><SkipForwardIcon /></button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }} 
+            className="absolute right-4 bottom-4 p-2 rounded-full hover:bg-white/10"
+            aria-label="Toggle fullscreen"
+          >
+            {isFullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
+          </button>
         </div>
       </div>
     </div>
