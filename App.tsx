@@ -51,6 +51,22 @@ const App: React.FC = () => {
     setPhotoToDelete(null);
   }, []);
 
+  const handleNextPhoto = useCallback(() => {
+    if (!selectedPhoto) return;
+    const currentIndex = sortedPhotos.findIndex(p => p.id === selectedPhoto.id);
+    if (currentIndex > -1 && currentIndex < sortedPhotos.length - 1) {
+      setSelectedPhoto(sortedPhotos[currentIndex + 1]);
+    }
+  }, [selectedPhoto, sortedPhotos]);
+
+  const handlePrevPhoto = useCallback(() => {
+    if (!selectedPhoto) return;
+    const currentIndex = sortedPhotos.findIndex(p => p.id === selectedPhoto.id);
+    if (currentIndex > 0) {
+      setSelectedPhoto(sortedPhotos[currentIndex - 1]);
+    }
+  }, [selectedPhoto, sortedPhotos]);
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -79,8 +95,11 @@ const App: React.FC = () => {
       {selectedPhoto && (
         <ViewPhotoModal
           photo={selectedPhoto}
+          photos={sortedPhotos}
           onClose={() => setSelectedPhoto(null)}
           onDelete={handleDeleteRequest}
+          onNext={handleNextPhoto}
+          onPrev={handlePrevPhoto}
         />
       )}
 

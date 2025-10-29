@@ -2,14 +2,19 @@ import React from 'react';
 import { Photo } from '../types';
 import { XIcon } from './icons/XIcon';
 import { TrashIcon } from './icons/TrashIcon';
+import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
+import { ChevronRightIcon } from './icons/ChevronRightIcon';
 
 interface ViewPhotoModalProps {
   photo: Photo | null;
+  photos: Photo[];
   onClose: () => void;
   onDelete: (photo: Photo) => void;
+  onNext: () => void;
+  onPrev: () => void;
 }
 
-const ViewPhotoModal: React.FC<ViewPhotoModalProps> = ({ photo, onClose, onDelete }) => {
+const ViewPhotoModal: React.FC<ViewPhotoModalProps> = ({ photo, photos, onClose, onDelete, onNext, onPrev }) => {
   if (!photo) return null;
 
   const formattedDate = new Date(photo.date).toLocaleString(undefined, {
@@ -20,6 +25,10 @@ const ViewPhotoModal: React.FC<ViewPhotoModalProps> = ({ photo, onClose, onDelet
   const handleDelete = () => {
     onDelete(photo);
   };
+
+  const currentIndex = photos.findIndex(p => p.id === photo.id);
+  const isFirstPhoto = currentIndex === 0;
+  const isLastPhoto = currentIndex === photos.length - 1;
 
   return (
     <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50" onClick={onClose}>
@@ -58,6 +67,28 @@ const ViewPhotoModal: React.FC<ViewPhotoModalProps> = ({ photo, onClose, onDelet
             </button>
           </div>
         </div>
+
+        {/* Prev Button */}
+        {!isFirstPhoto && (
+          <button
+            onClick={onPrev}
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 text-white hover:bg-black/50 transition-all"
+            aria-label="Previous photo"
+          >
+            <ChevronLeftIcon />
+          </button>
+        )}
+
+        {/* Next Button */}
+        {!isLastPhoto && (
+          <button
+            onClick={onNext}
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 text-white hover:bg-black/50 transition-all"
+            aria-label="Next photo"
+          >
+            <ChevronRightIcon />
+          </button>
+        )}
       </div>
     </div>
   );
