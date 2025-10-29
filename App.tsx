@@ -18,7 +18,13 @@ const App: React.FC = () => {
   const [photos, setPhotos] = useLocalStorage<Photo[]>('photos', []);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
-  const [photoToDelete, setPhotoToDelete] = useState<Photo | null>(null);
+  
+  // State for single and multiple photo deletion
+  const [photosToDelete, setPhotosToDelete] = useState<Photo[]>([]);
+
+  // State for multiple selection mode
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<string>>(new Set());
   
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<Filters>({
@@ -66,20 +72,24 @@ const App: React.FC = () => {
   }, []);
   
   const handleDeleteRequest = useCallback((photo: Photo) => {
-    setPhotoToDelete(photo);
+    setPhotosToDelete([photo]);
   }, []);
 
   const handleConfirmDelete = useCallback(() => {
-    if (!photoToDelete) return;
-    setPhotos(prevPhotos => prevPhotos.filter(p => p.id !== photoToDelete.id));
-    if (selectedPhoto?.id === photoToDelete.id) {
+    if (photosToDelete.length === 0) return;
+    const idsToDelete = new Set(photosToDelete.map(p => p.id));
+    setPhotos(prevPhotos => prevPhotos.filter(p => !idsToDelete.has(p.id)));
+    
+    if (selectedPhoto && idsToDelete.has(selectedPhoto.id)) {
       setSelectedPhoto(null);
     }
-    setPhotoToDelete(null);
-  }, [setPhotos, photoToDelete, selectedPhoto]);
+    setPhotosToDelete([]);
+    setIsSelectionMode(false);
+    setSelectedPhotoIds(new Set());
+  }, [setPhotos, photosToDelete, selectedPhoto]);
 
   const handleCancelDelete = useCallback(() => {
-    setPhotoToDelete(null);
+    setPhotosToDelete([]);
   }, []);
 
   const handleNextPhoto = useCallback(() => {
@@ -98,9 +108,48 @@ const App: React.FC = () => {
     }
   }, [selectedPhoto, filteredPhotos]);
 
+  // --- Multiple Selection Handlers ---
+  const handleEnterSelectionMode = useCallback((photo: Photo) => {
+    setIsSelectionMode(true);
+    setSelectedPhotoIds(new Set([photo.id]));
+  }, []);
+
+  const handleToggleSelection = useCallback((photoId: string) => {
+    setSelectedPhotoIds(prevIds => {
+      const newIds = new Set(prevIds);
+      if (newIds.has(photoId)) {
+        newIds.delete(photoId);
+      } else {
+        newIds.add(photoId);
+      }
+      // If last item is deselected, exit selection mode
+      if (newIds.size === 0) {
+        setIsSelectionMode(false);
+      }
+      return newIds;
+    });
+  }, []);
+
+  const handleCancelSelection = useCallback(() => {
+    setIsSelectionMode(false);
+    setSelectedPhotoIds(new Set());
+  }, []);
+
+  const handleDeleteSelectedRequest = useCallback(() => {
+    const photosToDelete = photos.filter(p => selectedPhotoIds.has(p.id));
+    setPhotosToDelete(photosToDelete);
+  }, [photos, selectedPhotoIds]);
+
   return (
     <div className="min-h-screen">
-      <Header onCycleLayout={cycleLayout} currentLayout={layout} />
+      <Header 
+        onCycleLayout={cycleLayout} 
+        currentLayout={layout}
+        isSelectionMode={isSelectionMode}
+        selectedCount={selectedPhotoIds.size}
+        onCancelSelection={handleCancelSelection}
+        onDeleteSelected={handleDeleteSelectedRequest}
+      />
       <main className="container mx-auto px-4 py-8">
         <SearchAndFilter
           searchQuery={searchQuery}
@@ -115,6 +164,10 @@ const App: React.FC = () => {
             onPhotoClick={handleSelectPhoto} 
             onDeletePhoto={handleDeleteRequest}
             layout={layout}
+            isSelectionMode={isSelectionMode}
+            onEnterSelectionMode={handleEnterSelectionMode}
+            onToggleSelection={handleToggleSelection}
+            selectedPhotoIds={selectedPhotoIds}
           />
         ) : (
           <div className="text-center py-20">
@@ -128,9 +181,11 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <Fab onClick={() => setIsUploadModalOpen(true)}>
-        <PlusIcon />
-      </Fab>
+      {!isSelectionMode && (
+          <Fab onClick={() => setIsUploadModalOpen(true)}>
+            <PlusIcon />
+          </Fab>
+      )}
 
       {isUploadModalOpen && (
         <UploadModal
@@ -150,8 +205,9 @@ const App: React.FC = () => {
         />
       )}
 
-      {photoToDelete && (
+      {photosToDelete.length > 0 && (
         <ConfirmDeleteModal
+          count={photosToDelete.length}
           onConfirm={handleConfirmDelete}
           onCancel={handleCancelDelete}
         />

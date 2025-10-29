@@ -3,9 +3,14 @@ import React from 'react';
 interface ConfirmDeleteModalProps {
   onConfirm: () => void;
   onCancel: () => void;
+  count?: number;
 }
 
-const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({ onConfirm, onCancel }) => {
+const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({ onConfirm, onCancel, count = 1 }) => {
+  const message = count > 1 
+    ? `Bạn có chắc chắn xoá ${count} tấm ảnh này không?`
+    : "Bạn có chắc chắn xoá tấm ảnh này không?";
+
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onCancel}>
       <div 
@@ -13,7 +18,7 @@ const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({ onConfirm, onCa
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6 text-center">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-text-main mb-4">Bạn có chắc chắn xoá tấm ảnh này không?</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-text-main mb-4">{message}</h3>
         </div>
         <div className="bg-gray-50 dark:bg-primary px-6 py-4 rounded-b-lg flex justify-end space-x-3">
           <button 

@@ -9,10 +9,16 @@ interface TimelineProps {
   onPhotoClick: (photo: Photo) => void;
   onDeletePhoto: (photo: Photo) => void;
   layout: Layout;
+  // Selection mode props
+  isSelectionMode: boolean;
+  selectedPhotoIds: Set<string>;
+  onEnterSelectionMode: (photo: Photo) => void;
+  onToggleSelection: (photoId: string) => void;
 }
 
-const DatedGridTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ photos, onPhotoClick, onDeletePhoto }) => {
+const DatedGridTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ photos, ...rest }) => {
     const groupedPhotos = photos.reduce((acc, photo) => {
+        // FIX: Corrected typo from `toLocaleDateDateString` to `toLocaleDateString`.
         const date = new Date(photo.date).toLocaleDateString(undefined, {
             year: 'numeric',
             month: 'long',
@@ -35,8 +41,12 @@ const DatedGridTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ photos, on
                             <PhotoCard
                                 key={photo.id}
                                 photo={photo}
-                                onClick={() => onPhotoClick(photo)}
-                                onDelete={onDeletePhoto}
+                                onClick={() => rest.onPhotoClick(photo)}
+                                onDelete={rest.onDeletePhoto}
+                                isSelected={rest.selectedPhotoIds.has(photo.id)}
+                                isSelectionMode={rest.isSelectionMode}
+                                onEnterSelectionMode={rest.onEnterSelectionMode}
+                                onToggleSelection={rest.onToggleSelection}
                             />
                         ))}
                     </div>
@@ -46,30 +56,38 @@ const DatedGridTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ photos, on
     );
 };
 
-const CompactGridTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ photos, onPhotoClick, onDeletePhoto }) => {
+const CompactGridTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ photos, ...rest }) => {
     return (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {photos.map((photo) => (
                 <PhotoCard
                     key={photo.id}
                     photo={photo}
-                    onClick={() => onPhotoClick(photo)}
-                    onDelete={onDeletePhoto}
+                    onClick={() => rest.onPhotoClick(photo)}
+                    onDelete={rest.onDeletePhoto}
+                    isSelected={rest.selectedPhotoIds.has(photo.id)}
+                    isSelectionMode={rest.isSelectionMode}
+                    onEnterSelectionMode={rest.onEnterSelectionMode}
+                    onToggleSelection={rest.onToggleSelection}
                 />
             ))}
         </div>
     );
 };
 
-const ListTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ photos, onPhotoClick, onDeletePhoto }) => {
+const ListTimeline: React.FC<Omit<TimelineProps, 'layout'>> = ({ photos, ...rest }) => {
     return (
         <div className="max-w-2xl mx-auto space-y-4">
             {photos.map((photo) => (
                 <PhotoListItem
                     key={photo.id}
                     photo={photo}
-                    onClick={() => onPhotoClick(photo)}
-                    onDelete={onDeletePhoto}
+                    onClick={() => rest.onPhotoClick(photo)}
+                    onDelete={rest.onDeletePhoto}
+                    isSelected={rest.selectedPhotoIds.has(photo.id)}
+                    isSelectionMode={rest.isSelectionMode}
+                    onEnterSelectionMode={rest.onEnterSelectionMode}
+                    onToggleSelection={rest.onToggleSelection}
                 />
             ))}
         </div>
