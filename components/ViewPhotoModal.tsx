@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Photo } from '../types';
 import { XIcon } from './icons/XIcon';
@@ -23,29 +22,42 @@ const ViewPhotoModal: React.FC<ViewPhotoModalProps> = ({ photo, onClose, onDelet
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-        <img src={photo.dataUrl} alt={photo.caption} className="w-full h-auto object-contain flex-shrink mb-4 rounded-lg" />
-        <div className="bg-white/80 dark:bg-secondary/80 backdrop-blur-sm p-4 rounded-lg text-center flex-shrink-0 flex justify-between items-center">
-          <div>
-            <p className="text-gray-900 dark:text-text-main font-semibold text-left">{photo.caption || 'No caption'}</p>
-            <p className="text-gray-500 dark:text-text-secondary text-sm text-left">{formattedDate}</p>
+    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="relative w-full h-full flex items-center justify-center animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+        {/* Fullscreen Image */}
+        <img
+          src={photo.dataUrl}
+          alt={photo.caption}
+          className="max-w-full max-h-full object-contain"
+          loading="lazy"
+        />
+
+        {/* Top Control Bar */}
+        <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 to-transparent p-4 flex justify-between items-start text-white">
+          {/* Caption and Date */}
+          <div className="flex-1 mr-4">
+            <h3 className="font-bold text-lg">{photo.caption || 'No caption'}</h3>
+            <p className="text-sm text-gray-300">{formattedDate}</p>
           </div>
-          <button
-            onClick={handleDelete}
-            className="text-gray-500 dark:text-text-secondary hover:text-red-500 transition-colors p-2 rounded-full"
-            aria-label="Delete photo"
-          >
-            <TrashIcon />
-          </button>
+
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleDelete}
+              className="p-2 rounded-full hover:bg-white/10 transition-colors"
+              aria-label="Delete photo"
+            >
+              <TrashIcon className="h-6 w-6 hover:text-red-500 transition-colors" />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-white/10 transition-colors"
+              aria-label="Close photo view"
+            >
+              <XIcon />
+            </button>
+          </div>
         </div>
-        <button
-          onClick={onClose}
-          className="absolute -top-3 -right-3 bg-white dark:bg-secondary text-gray-800 dark:text-text-main w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-          aria-label="Close photo view"
-        >
-          <XIcon />
-        </button>
       </div>
     </div>
   );
