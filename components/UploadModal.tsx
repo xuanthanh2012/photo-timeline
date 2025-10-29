@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback } from 'react';
 import { Photo } from '../types';
 import { XIcon } from './icons/XIcon';
@@ -13,7 +12,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
@@ -38,7 +37,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 dark:bg-black/70 flex items-center justify-center z-40 p-4" onClick={onClose}>
-      <div className="bg-white dark:bg-secondary rounded-lg shadow-xl w-full max-w-md relative animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white dark:bg-secondary rounded-lg shadow-xl w-full max-w-lg relative animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-gray-900 dark:text-text-main">Add New Photo</h2>
@@ -47,34 +46,32 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
             </button>
           </div>
 
-          <div className="space-y-4">
-            {previewUrl ? (
-              <div className="w-full aspect-video bg-gray-100 dark:bg-primary rounded-md overflow-hidden flex items-center justify-center">
-                <img src={previewUrl} alt="Preview" className="max-h-full max-w-full" />
-              </div>
-            ) : (
-               <div
-                 className="w-full aspect-video bg-gray-100 dark:bg-primary rounded-md border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center text-gray-500 dark:text-text-secondary cursor-pointer hover:border-accent hover:text-accent transition-colors"
-                 onClick={() => fileInputRef.current?.click()}
-               >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  <span>Click to select image</span>
-               </div>
-            )}
-             <input
-              type="file"
-              ref={fileInputRef}
-              accept="image/*"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            <textarea
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              placeholder="Add an optional caption..."
-              rows={3}
-              className="w-full bg-gray-100 dark:bg-primary text-gray-900 dark:text-text-main p-2 rounded-md border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-shadow"
-            />
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="md:w-1/2">
+                <div
+                    className="w-full aspect-square bg-gray-100 dark:bg-primary rounded-md border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center text-gray-500 dark:text-text-secondary cursor-pointer hover:border-accent hover:text-accent transition-colors relative"
+                    onClick={() => fileInputRef.current?.click()}
+                >
+                    {previewUrl ? (
+                        <img src={previewUrl} alt="Preview" className="w-full h-full object-cover rounded-md" />
+                    ) : (
+                        <>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            <span>Click to select image</span>
+                        </>
+                    )}
+                </div>
+                <input type="file" ref={fileInputRef} accept="image/*" onChange={handleFileChange} className="hidden" />
+            </div>
+            <div className="md:w-1/2 space-y-4">
+                <textarea
+                    value={caption}
+                    onChange={(e) => setCaption(e.target.value)}
+                    placeholder="Add a caption..."
+                    rows={3}
+                    className="w-full bg-gray-100 dark:bg-primary text-gray-900 dark:text-text-main p-2 rounded-md border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-shadow"
+                />
+            </div>
           </div>
         </div>
 
