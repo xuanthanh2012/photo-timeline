@@ -1,0 +1,5 @@
+{
+  "name": "Photo Timeline",
+  "description": "An elegant web application to upload, store, and view your photos organized by date in a beautiful timeline format.",
+  "requestFramePermissions": []
+}
