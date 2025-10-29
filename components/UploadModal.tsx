@@ -37,7 +37,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 dark:bg-black/70 flex items-center justify-center z-40 p-4" onClick={onClose}>
-      <div className="bg-white dark:bg-secondary rounded-lg shadow-xl w-full max-w-lg relative animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white dark:bg-secondary rounded-lg shadow-xl w-full max-w-2xl relative animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-gray-900 dark:text-text-main">Add New Photo</h2>

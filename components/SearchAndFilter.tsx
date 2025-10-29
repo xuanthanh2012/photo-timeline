@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-// Fix: Import Filters from types.ts where it is now defined.
 import { Filters, Photo } from '../types';
 import FilterPanel from './FilterPanel';
 import { FilterIcon } from './icons/FilterIcon';
@@ -25,15 +24,11 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   const clearFilters = () => {
     onFilterChange({
         dateRange: { start: '', end: '' },
-        contentType: '',
-        dominantColor: '',
     });
   };
 
   const activeFilterCount = [
     filters.dateRange.start || filters.dateRange.end,
-    filters.contentType,
-    filters.dominantColor,
   ].filter(Boolean).length;
 
   return (
@@ -44,7 +39,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search captions and tags..."
+            placeholder="Search captions..."
             className="w-full pl-10 pr-4 py-2 rounded-lg bg-white dark:bg-secondary border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-shadow"
           />
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -69,8 +64,6 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
         <div className="mt-2 flex items-center gap-2">
             <span className="text-sm text-gray-600 dark:text-text-secondary">Active filters:</span>
             { (filters.dateRange.start || filters.dateRange.end) && <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-full">Date</span>}
-            { filters.contentType && <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-full">{filters.contentType}</span>}
-            { filters.dominantColor && <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-full">{filters.dominantColor}</span>}
             <button onClick={clearFilters} className="text-accent text-sm hover:underline">Clear all</button>
         </div>
       )}

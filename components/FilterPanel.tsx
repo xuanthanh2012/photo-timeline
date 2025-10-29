@@ -1,5 +1,4 @@
-import React, { useMemo } from 'react';
-// Fix: Import Filters from types.ts where it is now defined.
+import React from 'react';
 import { Filters, Photo } from '../types';
 import { XIcon } from './icons/XIcon';
 
@@ -10,16 +9,7 @@ interface FilterPanelProps {
   onClose: () => void;
 }
 
-const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFilterChange, allPhotos, onClose }) => {
-  const contentTypes = useMemo(() => {
-    const types = new Set(allPhotos.map(p => p.contentType).filter(Boolean));
-    return Array.from(types) as string[];
-  }, [allPhotos]);
-  
-  const dominantColors = useMemo(() => {
-    const colors = new Set(allPhotos.map(p => p.dominantColor).filter(Boolean));
-    return Array.from(colors) as string[];
-  }, [allPhotos]);
+const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFilterChange, onClose }) => {
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'start' | 'end') => {
     onFilterChange({
@@ -28,15 +18,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFilterChange, allP
     });
   };
 
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>, field: 'contentType' | 'dominantColor') => {
-    onFilterChange({ ...filters, [field]: e.target.value });
-  };
-  
   const clearFilters = () => {
     onFilterChange({
         dateRange: { start: '', end: '' },
-        contentType: '',
-        dominantColor: '',
     });
     onClose();
   };
@@ -65,36 +49,6 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFilterChange, allP
             />
           </div>
         </div>
-        
-        {contentTypes.length > 0 && (
-            <div>
-            <label htmlFor="contentType" className="block text-sm font-medium text-gray-700 dark:text-text-secondary mb-1">Content Type</label>
-            <select
-                id="contentType"
-                value={filters.contentType}
-                onChange={(e) => handleSelectChange(e, 'contentType')}
-                className="w-full bg-gray-100 dark:bg-primary p-2 rounded-md border border-gray-300 dark:border-gray-600 focus:ring-accent"
-            >
-                <option value="">All Types</option>
-                {contentTypes.map(type => <option key={type} value={type}>{type}</option>)}
-            </select>
-            </div>
-        )}
-
-        {dominantColors.length > 0 && (
-            <div>
-            <label htmlFor="dominantColor" className="block text-sm font-medium text-gray-700 dark:text-text-secondary mb-1">Dominant Color</label>
-            <select
-                id="dominantColor"
-                value={filters.dominantColor}
-                onChange={(e) => handleSelectChange(e, 'dominantColor')}
-                className="w-full bg-gray-100 dark:bg-primary p-2 rounded-md border border-gray-300 dark:border-gray-600 focus:ring-accent"
-            >
-                <option value="">All Colors</option>
-                {dominantColors.map(color => <option key={color} value={color}>{color}</option>)}
-            </select>
-            </div>
-        )}
       </div>
        <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4 flex justify-end">
             <button 
