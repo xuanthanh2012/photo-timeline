@@ -2,17 +2,21 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Photo } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useTheme } from './hooks/useTheme';
 import Header from './components/Header';
 import Timeline from './components/Timeline';
 import Fab from './components/Fab';
 import UploadModal from './components/UploadModal';
 import ViewPhotoModal from './components/ViewPhotoModal';
+import ConfirmDeleteModal from './components/ConfirmDeleteModal';
 import { PlusIcon } from './components/icons/PlusIcon';
 
 const App: React.FC = () => {
+  useTheme(); // Initialize theme management
   const [photos, setPhotos] = useLocalStorage<Photo[]>('photos', []);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [photoToDelete, setPhotoToDelete] = useState<Photo | null>(null);
 
   const sortedPhotos = useMemo(() => {
     return [...photos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -30,21 +34,33 @@ const App: React.FC = () => {
     setSelectedPhoto(photo);
   }, []);
   
-  const handleDeletePhoto = useCallback((photoId: string) => {
-    setPhotos(prevPhotos => prevPhotos.filter(p => p.id !== photoId));
-    setSelectedPhoto(null); // Close modal after deletion
-  }, [setPhotos]);
+  const handleDeleteRequest = useCallback((photo: Photo) => {
+    setPhotoToDelete(photo);
+  }, []);
+
+  const handleConfirmDelete = useCallback(() => {
+    if (!photoToDelete) return;
+    setPhotos(prevPhotos => prevPhotos.filter(p => p.id !== photoToDelete.id));
+    if (selectedPhoto?.id === photoToDelete.id) {
+      setSelectedPhoto(null);
+    }
+    setPhotoToDelete(null);
+  }, [setPhotos, photoToDelete, selectedPhoto]);
+
+  const handleCancelDelete = useCallback(() => {
+    setPhotoToDelete(null);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-primary">
+    <div className="min-h-screen">
       <Header />
       <main className="container mx-auto px-4 py-8">
         {sortedPhotos.length > 0 ? (
-          <Timeline photos={sortedPhotos} onPhotoClick={handleSelectPhoto} />
+          <Timeline photos={sortedPhotos} onPhotoClick={handleSelectPhoto} onDeletePhoto={handleDeleteRequest} />
         ) : (
           <div className="text-center py-20">
-            <h2 className="text-2xl font-bold text-text-main mb-2">Your timeline is empty</h2>
-            <p className="text-text-secondary">Click the '+' button to add your first photo.</p>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-text-main mb-2">Your timeline is empty</h2>
+            <p className="text-gray-600 dark:text-text-secondary">Click the '+' button to add your first photo.</p>
           </div>
         )}
       </main>
@@ -64,7 +80,14 @@ const App: React.FC = () => {
         <ViewPhotoModal
           photo={selectedPhoto}
           onClose={() => setSelectedPhoto(null)}
-          onDelete={handleDeletePhoto}
+          onDelete={handleDeleteRequest}
+        />
+      )}
+
+      {photoToDelete && (
+        <ConfirmDeleteModal
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
         />
       )}
     </div>
