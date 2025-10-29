@@ -27,7 +27,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
   };
   
   const handleUpload = useCallback(() => {
-    if (previewUrl && caption) {
+    if (previewUrl) {
       onUpload({
         date: new Date().toISOString(),
         caption,
@@ -71,7 +71,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
             <textarea
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              placeholder="Add a caption..."
+              placeholder="Add an optional caption..."
               rows={3}
               className="w-full bg-primary text-text-main p-2 rounded-md border border-gray-600 focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-shadow"
             />
@@ -82,7 +82,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
           <button onClick={onClose} className="px-4 py-2 rounded-md text-text-main bg-gray-600 hover:bg-gray-500 transition-colors">Cancel</button>
           <button
             onClick={handleUpload}
-            disabled={!previewUrl || !caption}
+            disabled={!previewUrl}
             className="px-4 py-2 rounded-md text-white bg-accent hover:bg-blue-600 transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed"
           >
             Upload

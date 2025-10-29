@@ -29,6 +29,11 @@ const App: React.FC = () => {
   const handleSelectPhoto = useCallback((photo: Photo) => {
     setSelectedPhoto(photo);
   }, []);
+  
+  const handleDeletePhoto = useCallback((photoId: string) => {
+    setPhotos(prevPhotos => prevPhotos.filter(p => p.id !== photoId));
+    setSelectedPhoto(null); // Close modal after deletion
+  }, [setPhotos]);
 
   return (
     <div className="min-h-screen bg-primary">
@@ -59,6 +64,7 @@ const App: React.FC = () => {
         <ViewPhotoModal
           photo={selectedPhoto}
           onClose={() => setSelectedPhoto(null)}
+          onDelete={handleDeletePhoto}
         />
       )}
     </div>
